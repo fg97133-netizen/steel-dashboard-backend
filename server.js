@@ -11,18 +11,28 @@ const PORT = process.env.PORT || 3000;
 */
 app.get("/api/rebar", async (req, res) => {
     try {
-        const url = "https://stooq.com/q/d/l/?s=rb.f&i=d";
-        const response = await fetch(url);
+        const response = await fetch(
+            "http://stooq.com/q/d/l/?s=rb.f&i=d",
+            {
+                headers: {
+                    "User-Agent": "Mozilla/5.0"
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Stooq unreachable");
+        }
+
         const text = await response.text();
         const data = await csv().fromString(text);
 
-        // On renvoie les 90 derniers jours
         res.json(data.slice(-90));
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Erreur récupération fer à béton" });
     }
 });
-
 /*
   ENDPOINT 2
   Taux de change USD -> EUR
