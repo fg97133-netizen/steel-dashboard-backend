@@ -1,59 +1,50 @@
 import express from "express";
+import fetch from "node-fetch";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/*
-  ENDPOINT 1
-  Fer à béton (Steel Rebar futures)
-  Source open : Stooq (CSV public)
-*/
 app.get("/api/rebar", async (req, res) => {
-    try {
-        const API_KEY = "9jZExSftdNysrxe8yJRw";
+  try {
+    const url =
+      "https://api.tradingeconomics.com/markets/commodity/STEELREBAR?c=guest:guest";
 
-        const url =
-            "https://data.nasdaq.com/api/v3/datasets/CHRIS/SHFE_RB1.json" +
-            "?api_key=" + API_KEY;
+    const response = await fetch(url, { timeout: 5000 });
 
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error("Nasdaq Data Link unreachable");
-        }
-
-        const json = await response.json();
-
-        // Formatage simple pour le frontend
-        const data = json.dataset.data
-            .slice(0, 90)
-            .reverse()
-            .map(row => ({
-                Date: row[0],
-                Close: row[4]
-            }));
-
-        res.json(data);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erreur récupération fer à béton" });
+    if (!response.ok) {
+      throw new Error("Trading Economics unreachable");
     }
-});
-/*
-  ENDPOINT 2
-  Taux de change USD -> EUR
-  Source open
-*/
-app.get("/api/fx", async (req, res) => {
-    try {
-        const response = await fetch("https://open.er-api.com/v6/latest/USD");
-        const data = await response.json();
-        res.json({ rate: data.rates.EUR });
-    } catch (error) {
-        res.status(500).json({ error: "Erreur récupération taux de change" });
-    }
+
+    const json = await response.json();
+
+    // On prend les dernières observations
+    const data = json
+      .slice(-30)
+      .map(item => ({
+        date: item.Date.substring(0, 10),
+        value: item.Last
+      }));
+
+    const trend =
+      data.at(-1).value > data.at(-2).value
+        ? "up"
+        : data.at(-1).value < data.at(-2).value
+        ? "down"
+        : "flat";
+
+    res.json({
+      source: "Trading Economics",
+      unit: "USD / tonne",
+      trend,
+      data
+    });
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(PORT, () => {
-    console.log(`Backend acier démarré sur le port ${PORT}`);
+  console.log(`Backend démonstrateur acier actif sur le port ${PORT}`);
 });
