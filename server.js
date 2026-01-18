@@ -1,5 +1,4 @@
 import express from "express";
-import csv from "csvtojson";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 */
 app.get("/api/rebar", async (req, res) => {
     try {
-        const API_KEY = 9jZExSftdNysrxe8yJRw;
+        const API_KEY = "9jZExSftdNysrxe8yJRw";
 
         const url =
             "https://data.nasdaq.com/api/v3/datasets/CHRIS/SHFE_RB1.json" +
