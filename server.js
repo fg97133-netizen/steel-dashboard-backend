@@ -11,23 +11,30 @@ const PORT = process.env.PORT || 3000;
 */
 app.get("/api/rebar", async (req, res) => {
     try {
-        const response = await fetch(
-            "http://stooq.com/q/d/l/?s=rb.f&i=d",
-            {
-                headers: {
-                    "User-Agent": "Mozilla/5.0"
-                }
-            }
-        );
+        const API_KEY = 9jZExSftdNysrxe8yJRw;
 
+        const url =
+            "https://data.nasdaq.com/api/v3/datasets/CHRIS/SHFE_RB1.json" +
+            "?api_key=" + API_KEY;
+
+        const response = await fetch(url);
         if (!response.ok) {
-            throw new Error("Stooq unreachable");
+            throw new Error("Nasdaq Data Link unreachable");
         }
 
-        const text = await response.text();
-        const data = await csv().fromString(text);
+        const json = await response.json();
 
-        res.json(data.slice(-90));
+        // Formatage simple pour le frontend
+        const data = json.dataset.data
+            .slice(0, 90)
+            .reverse()
+            .map(row => ({
+                Date: row[0],
+                Close: row[4]
+            }));
+
+        res.json(data);
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erreur récupération fer à béton" });
